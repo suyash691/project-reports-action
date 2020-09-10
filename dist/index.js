@@ -7091,6 +7091,7 @@ function generate(token, configYaml) {
         console.log(JSON.stringify(crawlCfg, null, 2));
         const crawler = new crawler_1.Crawler(token, cachePath);
         heading('Processing');
+
         let github = new github_1.GitHubClient(token, cachePath);
         for (const processor of config.processing || []) {
             if (!processor.target) {
@@ -7111,6 +7112,7 @@ function generate(token, configYaml) {
             const set = new project_reports_lib_1.IssueList(issue => issue.html_url);
             set.add(issues);
             heading(`Processing target: '${processor.target}' with processor: '${processor.name}'`);
+
             yield processingModule.process(target, config, set, github);
         }
         console.log();

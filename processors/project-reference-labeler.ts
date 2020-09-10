@@ -59,6 +59,7 @@ export async function process(
   data: IssueList,
   github: GitHubClient
 ): Promise<void> {
+
   for (const issue of data.getItems()) {
     console.log()
     console.log(`initiative : ${issue.project_column}`)

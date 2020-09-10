@@ -140,6 +140,7 @@ class ProjectCrawler {
         // read and build the event list once
 
         const issueCard = await this.github.getIssueForCard(card)
+
         if (issueCard) {
           this.processCard(issueCard, projectData.id, target, eventCallback)
           issueCard['project_column'] = column.name

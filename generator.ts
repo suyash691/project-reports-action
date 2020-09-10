@@ -139,6 +139,7 @@ export async function generate(token: string, configYaml: string): Promise<Repor
   const crawler: Crawler = new Crawler(token, cachePath)
 
   heading('Processing')
+
   const github = new GitHubClient(token, cachePath)
   for (const processor of config.processing || []) {
     if (!processor.target) {

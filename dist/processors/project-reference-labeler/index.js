@@ -104,6 +104,7 @@ function getDefaultConfiguration() {
     };
 }
 exports.getDefaultConfiguration = getDefaultConfiguration;
+
 // const noiseWords = ['the', 'in', 'and', 'of']
 function cleanLabelName(prefix, title) {
     title = title.replace(/\([^()]*\)/g, '').replace(/ *\[[^\]]*]/, '');
@@ -169,7 +170,6 @@ function process(target, config, data, github) {
     });
 }
 exports.process = process;
-
 
 /***/ }),
 

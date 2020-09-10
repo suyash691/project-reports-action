@@ -84,6 +84,7 @@ export interface RuntimeModule {
 // process a list of issues from a target
 export interface ProjectProcessor extends RuntimeModule {
   targetType: 'project' | 'repo' | 'any'
+
   // async
   process(target: CrawlingTarget, config: any, data: IssueList, github: GitHubClient): Promise<void>
 }
