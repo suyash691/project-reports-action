@@ -56,9 +56,38 @@ module.exports =
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.process = exports.getDefaultConfiguration = exports.reportType = void 0;
 const moment = __webpack_require__(431);
+const url = __importStar(__webpack_require__(835));
 const now = moment();
 const reportType = 'project';
 exports.reportType = reportType;
@@ -75,31 +104,71 @@ function getDefaultConfiguration() {
     };
 }
 exports.getDefaultConfiguration = getDefaultConfiguration;
-const noiseWords = ['the', 'in', 'and', 'of'];
+// const noiseWords = ['the', 'in', 'and', 'of']
 function cleanLabelName(prefix, title) {
     title = title.replace(/\([^()]*\)/g, '').replace(/ *\[[^\]]*]/, '');
-    let words = title.match(/[a-zA-Z0-9]+/g);
+    const words = title.match(/[a-zA-Z0-9&]+/g);
     //  words = words.map(item => item.toLowerCase())
-    words = words.filter(word => noiseWords.indexOf(word) < 0);
+    //words = words.filter(word => noiseWords.indexOf(word) < 0)
     return `${prefix.trim()} ${words.join(' ')}`;
 }
-// get alphanumeric clean version of string (strip special chars). spaces to chars.  remove common filler words (a, the, &, and)
-function process(target, config, data) {
-    for (const issue of data.getItems()) {
-        console.log();
-        console.log(`initiative : ${issue.project_column}`);
-        console.log(`epic       : ${issue.title}`);
-        console.log('creates    :');
-        if (issue.project_column) {
-            const initLabel = cleanLabelName(config['column-label-prefix'], issue.project_column);
-            console.log(`  initiative label : '${initLabel}'`);
+// ensures that only a label with this prefix exists
+function ensureOnlyLabel(issue, prefix, labelName) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const initLabels = issue.labels.filter(label => label.name === labelName);
+        if (initLabels.length == 0) {
+            // add, but first ...
+            // remove any other labels with that prefix
+            for (const label of issue.labels) {
+                if (label.name.trim().startsWith(prefix)) {
+                    console.log(`Removing label: ${label.name}`);
+                }
+            }
+            console.log(`Adding label: ${labelName}`);
         }
-        const epicLabel = cleanLabelName(config['linked-label-prefix'], issue.title);
-        console.log(`  epic label       : '${epicLabel}'`);
-    }
+        else {
+            console.log(`Label already exists: ${labelName}`);
+        }
+    });
+}
+// get alphanumeric clean version of string (strip special chars). spaces to chars.  remove common filler words (a, the, &, and)
+function process(target, config, data, github) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function* () {
+        for (const issue of data.getItems()) {
+            console.log();
+            console.log(`initiative : ${issue.project_column}`);
+            console.log(`epic       : ${issue.title}`);
+            console.log('creates    :');
+            let initLabel;
+            if (issue.project_column) {
+                initLabel = cleanLabelName(config['column-label-prefix'], issue.project_column);
+                console.log(`  initiative label : '${initLabel}'`);
+            }
+            const epicLabel = cleanLabelName(config['linked-label-prefix'], issue.title);
+            console.log(`  epic label       : '${epicLabel}'`);
+            console.log(issue.body);
+            console.log();
+            const urls = (_a = issue.body) === null || _a === void 0 ? void 0 : _a.match(/(?<=-\s*\[.*?\].*?)(https?:\/{2}(?:[/-\w.]|(?:%[\da-fA-F]{2}))+)/g);
+            //let urls = issue.body?.match(/(?<=-\s*\[.*?\].*?)([a-z]+[:.].*?(?=\s))/g)
+            for (const match of urls || []) {
+                try {
+                    console.log(`match: ${match}`);
+                    const u = new url.URL(match);
+                    const issue = yield github.getIssue(match);
+                    ensureOnlyLabel(issue, config['column-label-prefix'], initLabel);
+                    ensureOnlyLabel(issue, config['linked-label-prefix'], epicLabel);
+                }
+                catch (err) {
+                    console.log(`Ignoring invalid issue url: ${match}`);
+                    console.log(`(${err.message})`);
+                }
+                console.log();
+            }
+        }
+    });
 }
 exports.process = process;
-//
 
 
 /***/ }),
@@ -5776,6 +5845,13 @@ exports.process = process;
 
 })));
 
+
+/***/ }),
+
+/***/ 835:
+/***/ (function(module) {
+
+module.exports = require("url");
 
 /***/ })
 

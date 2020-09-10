@@ -177,6 +177,7 @@ export function getProjectStageIssues(issues: ProjectIssue[]) {
 
 export interface IssueLabel {
   name: string
+  color: string
 }
 
 export interface IssueCardEventProject {
@@ -219,6 +220,7 @@ export interface IssueComment {
 
 export interface ProjectIssue {
   title: string
+  body: string
   number: number
   html_url: string
   state: string

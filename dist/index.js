@@ -340,18 +340,24 @@ class GitHubClient {
         });
     }
     // returns null if not an issue
-    getIssueForCard(card, projectId) {
+    getIssueForCard(card) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!card.content_url) {
                 return null;
             }
-            const cardUrl = new url.URL(card.content_url);
-            const cardParts = cardUrl.pathname.split('/').filter(e => e);
-            // /repos/:owner/:repo/issues/events/:event_id
-            // https://api.github.com/repos/bryanmacfarlane/quotes-feed/issues/9
-            const owner = cardParts[1];
-            const repo = cardParts[2];
-            const issue_number = cardParts[4];
+            return this.getIssue(card.content_url);
+        });
+    }
+    getIssue(issueUrl) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const issURL = new url.URL(issueUrl);
+            // apiUrl: https://api.github.com/repos/bryanmacfarlane/quotes-feed/issues/9
+            // htmlUrl: https://github.com/bryanmacfarlane/quotes-feed/issues/9
+            const apiUrl = issURL.host.startsWith('api.');
+            const parts = issURL.pathname.split('/').filter(e => e);
+            const owner = parts[apiUrl ? 1 : 0];
+            const repo = parts[apiUrl ? 2 : 1];
+            const issue_number = parts[apiUrl ? 4 : 3];
             const issueCard = {};
             const res = yield this.octokit.issues.get({
                 owner: owner,
@@ -362,6 +368,7 @@ class GitHubClient {
             const issue = res.data;
             issueCard.number = issue.number;
             issueCard.title = issue.title;
+            issueCard.body = issue.body;
             issueCard.number = issue.number;
             issueCard.html_url = issue.html_url;
             issueCard.closed_at = DateOrNull(issue.closed_at);
@@ -1583,7 +1590,7 @@ class ProjectCrawler {
                     };
                     // cached since real column could be mapped to two different mapped columns
                     // read and build the event list once
-                    const issueCard = yield this.github.getIssueForCard(card, projectData.id);
+                    const issueCard = yield this.github.getIssueForCard(card);
                     if (issueCard) {
                         this.processCard(issueCard, projectData.id, target, eventCallback);
                         issueCard['project_column'] = column.name;
@@ -6982,12 +6989,12 @@ const fs = __importStar(__webpack_require__(747));
 const yaml = __importStar(__webpack_require__(414));
 const moment_1 = __importDefault(__webpack_require__(482));
 const mustache = __importStar(__webpack_require__(174));
-// import {GitHubClient} from './github'
 const os = __importStar(__webpack_require__(87));
 const path = __importStar(__webpack_require__(622));
 const sanitize_filename_1 = __importDefault(__webpack_require__(834));
 const url = __importStar(__webpack_require__(835));
 const crawler_1 = __webpack_require__(91);
+const github_1 = __webpack_require__(13);
 const project_reports_lib_1 = __webpack_require__(189);
 const drillInRpt = __importStar(__webpack_require__(398));
 const util = __importStar(__webpack_require__(873));
@@ -7084,6 +7091,7 @@ function generate(token, configYaml) {
         console.log(JSON.stringify(crawlCfg, null, 2));
         const crawler = new crawler_1.Crawler(token, cachePath);
         heading('Processing');
+        let github = new github_1.GitHubClient(token, cachePath);
         for (const processor of config.processing || []) {
             if (!processor.target) {
                 throw new Error(`Target not specified for processor ${processor.name}`);
@@ -7103,7 +7111,7 @@ function generate(token, configYaml) {
             const set = new project_reports_lib_1.IssueList(issue => issue.html_url);
             set.add(issues);
             heading(`Processing target: '${processor.target}' with processor: '${processor.name}'`);
-            processingModule.process(target, config, set);
+            yield processingModule.process(target, config, set, github);
         }
         console.log();
         console.log('Generating Reports');

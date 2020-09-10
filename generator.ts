@@ -3,12 +3,12 @@ import * as fs from 'fs'
 import * as yaml from 'js-yaml'
 import moment from 'moment'
 import * as mustache from 'mustache'
-// import {GitHubClient} from './github'
 import * as os from 'os'
 import * as path from 'path'
 import sanitize from 'sanitize-filename'
 import * as url from 'url'
 import {Crawler} from './crawler'
+import {GitHubClient} from './github'
 import {
   CrawlingConfig,
   CrawlingTarget,
@@ -139,6 +139,7 @@ export async function generate(token: string, configYaml: string): Promise<Repor
   const crawler: Crawler = new Crawler(token, cachePath)
 
   heading('Processing')
+  const github = new GitHubClient(token, cachePath)
   for (const processor of config.processing || []) {
     if (!processor.target) {
       throw new Error(`Target not specified for processor ${processor.name}`)
@@ -163,7 +164,7 @@ export async function generate(token: string, configYaml: string): Promise<Repor
     set.add(issues)
 
     heading(`Processing target: '${processor.target}' with processor: '${processor.name}'`)
-    processingModule.process(target, config, set)
+    await processingModule.process(target, config, set, github)
   }
 
   console.log()

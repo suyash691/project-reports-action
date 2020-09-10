@@ -139,7 +139,7 @@ class ProjectCrawler {
         // cached since real column could be mapped to two different mapped columns
         // read and build the event list once
 
-        const issueCard = await this.github.getIssueForCard(card, projectData.id)
+        const issueCard = await this.github.getIssueForCard(card)
         if (issueCard) {
           this.processCard(issueCard, projectData.id, target, eventCallback)
           issueCard['project_column'] = column.name

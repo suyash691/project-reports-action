@@ -122,20 +122,25 @@ export class GitHubClient {
   }
 
   // returns null if not an issue
-  public async getIssueForCard(card: any, projectId: number): Promise<ProjectIssue> {
+  public async getIssueForCard(card: any): Promise<ProjectIssue> {
     if (!card.content_url) {
       return null
     }
 
-    const cardUrl = new url.URL(card.content_url)
-    const cardParts = cardUrl.pathname.split('/').filter(e => e)
+    return this.getIssue(card.content_url)
+  }
 
-    // /repos/:owner/:repo/issues/events/:event_id
-    // https://api.github.com/repos/bryanmacfarlane/quotes-feed/issues/9
+  public async getIssue(issueUrl: string): Promise<ProjectIssue> {
+    const issURL = new url.URL(issueUrl)
 
-    const owner = cardParts[1]
-    const repo = cardParts[2]
-    const issue_number = cardParts[4]
+    // apiUrl: https://api.github.com/repos/bryanmacfarlane/quotes-feed/issues/9
+    // htmlUrl: https://github.com/bryanmacfarlane/quotes-feed/issues/9
+    const apiUrl = issURL.host.startsWith('api.')
+
+    const parts = issURL.pathname.split('/').filter(e => e)
+    const owner = parts[apiUrl ? 1 : 0]
+    const repo = parts[apiUrl ? 2 : 1]
+    const issue_number = parts[apiUrl ? 4 : 3]
 
     const issueCard = <ProjectIssue>{}
 
@@ -150,6 +155,7 @@ export class GitHubClient {
 
     issueCard.number = issue.number
     issueCard.title = issue.title
+    issueCard.body = issue.body
     issueCard.number = issue.number
     issueCard.html_url = issue.html_url
     issueCard.closed_at = DateOrNull(issue.closed_at)
