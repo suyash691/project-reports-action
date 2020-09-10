@@ -35,14 +35,13 @@ export function wrap(store: IStore) {
         response = await store.read(request, options)
         fromCache = true
       } else {
+        console.log(`[${err.status}]`)
         throw err
       }
     }
 
     if (!fromCache) {
-      console.log(
-        `rate : ${response.headers['x-ratelimit-remaining']}/${response.headers['x-ratelimit-limit']}`
-      )
+      console.log(`rate : ${response.headers['x-ratelimit-remaining']}/${response.headers['x-ratelimit-limit']}`)
       await store.write(response, options)
     }
 

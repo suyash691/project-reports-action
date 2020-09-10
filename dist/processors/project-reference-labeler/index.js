@@ -100,11 +100,13 @@ function getDefaultConfiguration() {
     return {
         'process-with-label': 'feature',
         'column-label-prefix': '> ',
-        'linked-label-prefix': '>> '
+        'linked-label-prefix': '>> ',
+        'label-color': '#FFFFFF',
+        // need to actually set to true, otherwise it's just a preview of what it would write
+        'write-labels': false
     };
 }
 exports.getDefaultConfiguration = getDefaultConfiguration;
-
 // const noiseWords = ['the', 'in', 'and', 'of']
 function cleanLabelName(prefix, title) {
     title = title.replace(/\([^()]*\)/g, '').replace(/ *\[[^\]]*]/, '');
@@ -114,18 +116,28 @@ function cleanLabelName(prefix, title) {
     return `${prefix.trim()} ${words.join(' ')}`;
 }
 // ensures that only a label with this prefix exists
-function ensureOnlyLabel(issue, prefix, labelName) {
+function ensureOnlyLabel(github, issue, labelName, prefix, config) {
     return __awaiter(this, void 0, void 0, function* () {
-        const initLabels = issue.labels.filter(label => label.name === labelName);
-        if (initLabels.length == 0) {
+        const write = config['write-labels'];
+        if (!write) {
+            console.log('Preview mode only');
+        }
+        const initLabels = issue.labels.filter(label => label.name.trim().toLowerCase() === labelName.trim().toLowerCase());
+        if (initLabels.length === 0) {
             // add, but first ...
             // remove any other labels with that prefix
             for (const label of issue.labels) {
                 if (label.name.trim().startsWith(prefix)) {
                     console.log(`Removing label: ${label.name}`);
+                    if (write) {
+                        github.removeIssueLabel(issue.html_url, label.name);
+                    }
                 }
             }
             console.log(`Adding label: ${labelName}`);
+            if (write) {
+                yield github.ensureIssueHasLabel(issue.html_url, labelName, config['label-color']);
+            }
         }
         else {
             console.log(`Label already exists: ${labelName}`);
@@ -150,15 +162,21 @@ function process(target, config, data, github) {
             console.log(`  epic label       : '${epicLabel}'`);
             console.log(issue.body);
             console.log();
+            // get issues that have a checkbox in front of it
             const urls = (_a = issue.body) === null || _a === void 0 ? void 0 : _a.match(/(?<=-\s*\[.*?\].*?)(https?:\/{2}(?:[/-\w.]|(?:%[\da-fA-F]{2}))+)/g);
-            //let urls = issue.body?.match(/(?<=-\s*\[.*?\].*?)([a-z]+[:.].*?(?=\s))/g)
             for (const match of urls || []) {
                 try {
                     console.log(`match: ${match}`);
                     const u = new url.URL(match);
                     const issue = yield github.getIssue(match);
-                    ensureOnlyLabel(issue, config['column-label-prefix'], initLabel);
-                    ensureOnlyLabel(issue, config['linked-label-prefix'], epicLabel);
+                    const processLabel = issue.labels.filter(label => label.name.toLowerCase() === config['process-with-label'].toLowerCase());
+                    if (processLabel.length == 0) {
+                        console.log(`Skipping.  Only processing with label ${config['process-with-label']}`);
+                        console.log();
+                        continue;
+                    }
+                    yield ensureOnlyLabel(github, issue, initLabel, config['column-label-prefix'], config);
+                    yield ensureOnlyLabel(github, issue, epicLabel, config['linked-label-prefix'], config);
                 }
                 catch (err) {
                     console.log(`Ignoring invalid issue url: ${match}`);
@@ -170,6 +188,7 @@ function process(target, config, data, github) {
     });
 }
 exports.process = process;
+
 
 /***/ }),
 

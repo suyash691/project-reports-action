@@ -18,7 +18,10 @@ export function getDefaultConfiguration(): any {
   return <any>{
     'process-with-label': 'feature',
     'column-label-prefix': '> ',
-    'linked-label-prefix': '>> '
+    'linked-label-prefix': '>> ',
+    'label-color': '#FFFFFF',
+    // need to actually set to true, otherwise it's just a preview of what it would write
+    'write-labels': false
   }
 }
 
@@ -35,18 +38,35 @@ function cleanLabelName(prefix: string, title: string) {
 }
 
 // ensures that only a label with this prefix exists
-async function ensureOnlyLabel(issue: ProjectIssue, prefix: string, labelName: string) {
-  const initLabels = issue.labels.filter(label => label.name === labelName)
-  if (initLabels.length == 0) {
+async function ensureOnlyLabel(
+  github: GitHubClient,
+  issue: ProjectIssue,
+  labelName: string,
+  prefix: string,
+  config: any
+) {
+  const write: boolean = config['write-labels']
+  if (!write) {
+    console.log('Preview mode only')
+  }
+
+  const initLabels = issue.labels.filter(label => label.name.trim().toLowerCase() === labelName.trim().toLowerCase())
+  if (initLabels.length === 0) {
     // add, but first ...
     // remove any other labels with that prefix
     for (const label of issue.labels) {
       if (label.name.trim().startsWith(prefix)) {
         console.log(`Removing label: ${label.name}`)
+        if (write) {
+          github.removeIssueLabel(issue.html_url, label.name)
+        }
       }
     }
 
     console.log(`Adding label: ${labelName}`)
+    if (write) {
+      await github.ensureIssueHasLabel(issue.html_url, labelName, config['label-color'])
+    }
   } else {
     console.log(`Label already exists: ${labelName}`)
   }
@@ -59,7 +79,6 @@ export async function process(
   data: IssueList,
   github: GitHubClient
 ): Promise<void> {
-
   for (const issue of data.getItems()) {
     console.log()
     console.log(`initiative : ${issue.project_column}`)
@@ -78,16 +97,27 @@ export async function process(
     console.log(issue.body)
     console.log()
 
+    // get issues that have a checkbox in front of it
     const urls = issue.body?.match(/(?<=-\s*\[.*?\].*?)(https?:\/{2}(?:[/-\w.]|(?:%[\da-fA-F]{2}))+)/g)
-    //let urls = issue.body?.match(/(?<=-\s*\[.*?\].*?)([a-z]+[:.].*?(?=\s))/g)
 
     for (const match of urls || []) {
       try {
         console.log(`match: ${match}`)
         const u = new url.URL(match)
         const issue = await github.getIssue(match)
-        ensureOnlyLabel(issue, config['column-label-prefix'], initLabel)
-        ensureOnlyLabel(issue, config['linked-label-prefix'], epicLabel)
+
+        const processLabel = issue.labels.filter(
+          label => label.name.toLowerCase() === config['process-with-label'].toLowerCase()
+        )
+
+        if (processLabel.length == 0) {
+          console.log(`Skipping.  Only processing with label ${config['process-with-label']}`)
+          console.log()
+          continue
+        }
+
+        await ensureOnlyLabel(github, issue, initLabel, config['column-label-prefix'], config)
+        await ensureOnlyLabel(github, issue, epicLabel, config['linked-label-prefix'], config)
       } catch (err) {
         console.log(`Ignoring invalid issue url: ${match}`)
         console.log(`(${err.message})`)

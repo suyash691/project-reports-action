@@ -339,6 +339,61 @@ class GitHubClient {
             });
         });
     }
+    issueParts(issueUrl) {
+        const issURL = new url.URL(issueUrl);
+        // apiUrl: https://api.github.com/repos/bryanmacfarlane/quotes-feed/issues/9
+        // htmlUrl: https://github.com/bryanmacfarlane/quotes-feed/issues/9
+        const apiUrl = issURL.host.startsWith('api.');
+        const parts = issURL.pathname.split('/').filter(e => e);
+        const owner = parts[apiUrl ? 1 : 0];
+        const repo = parts[apiUrl ? 2 : 1];
+        const issue_number = parts[apiUrl ? 4 : 3];
+        return {
+            owner,
+            repo,
+            issue_number
+        };
+    }
+    ensureLabel(owner, repo, name, color) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(`ensure label ${owner} ${repo} ${name} ${color}`);
+            try {
+                const res = yield this.octokit.issues.getLabel({
+                    owner,
+                    repo,
+                    name
+                });
+                console.log(`${res.data} exists`);
+                return;
+            }
+            catch (_a) {
+                console.log(`Creating label ${name} ${color}`);
+            }
+            // create
+            const res = yield this.octokit.issues.createLabel({
+                owner,
+                repo,
+                name,
+                color
+            });
+            console.log('created');
+        });
+    }
+    ensureIssueHasLabel(issueUrl, name, color) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const issueParts = this.issueParts(issueUrl);
+            yield this.ensureLabel(issueParts.owner, issueParts.repo, name, color);
+            const labels = [name];
+            yield this.octokit.issues.addLabels(Object.assign(Object.assign({}, issueParts), { labels }));
+            console.log('added');
+        });
+    }
+    removeIssueLabel(issueUrl, name) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.octokit.issues.removeLabel(Object.assign(Object.assign({}, this.issueParts(issueUrl)), { name }));
+            console.log(`removed ${name}`);
+        });
+    }
     // returns null if not an issue
     getIssueForCard(card) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -350,21 +405,9 @@ class GitHubClient {
     }
     getIssue(issueUrl) {
         return __awaiter(this, void 0, void 0, function* () {
-            const issURL = new url.URL(issueUrl);
-            // apiUrl: https://api.github.com/repos/bryanmacfarlane/quotes-feed/issues/9
-            // htmlUrl: https://github.com/bryanmacfarlane/quotes-feed/issues/9
-            const apiUrl = issURL.host.startsWith('api.');
-            const parts = issURL.pathname.split('/').filter(e => e);
-            const owner = parts[apiUrl ? 1 : 0];
-            const repo = parts[apiUrl ? 2 : 1];
-            const issue_number = parts[apiUrl ? 4 : 3];
+            const issueParts = this.issueParts(issueUrl);
             const issueCard = {};
-            const res = yield this.octokit.issues.get({
-                owner: owner,
-                repo: repo,
-                issue_number: issue_number,
-                per_page: 100
-            });
+            const res = yield this.octokit.issues.get(Object.assign(Object.assign({}, issueParts), { per_page: 100 }));
             const issue = res.data;
             issueCard.number = issue.number;
             issueCard.title = issue.title;
@@ -379,12 +422,12 @@ class GitHubClient {
             issueCard.labels = issue.labels;
             issueCard.comments = [];
             if (issue.comments > 0) {
-                issueCard.comments = yield this.getIssueComments(owner, repo, issue_number);
+                issueCard.comments = yield this.getIssueComments(issueParts.owner, issueParts.repo, issueParts.issue_number);
             }
             issueCard.events = yield this.octokit.paginate('GET /repos/:owner/:repo/issues/:id/events', {
-                owner: owner,
-                repo: repo,
-                id: issue_number,
+                owner: issueParts.owner,
+                repo: issueParts.repo,
+                id: issueParts.issue_number,
                 per_page: 100
             });
             return issueCard;
@@ -7091,8 +7134,7 @@ function generate(token, configYaml) {
         console.log(JSON.stringify(crawlCfg, null, 2));
         const crawler = new crawler_1.Crawler(token, cachePath);
         heading('Processing');
-
-        let github = new github_1.GitHubClient(token, cachePath);
+        const github = new github_1.GitHubClient(token, cachePath);
         for (const processor of config.processing || []) {
             if (!processor.target) {
                 throw new Error(`Target not specified for processor ${processor.name}`);
@@ -7112,7 +7154,6 @@ function generate(token, configYaml) {
             const set = new project_reports_lib_1.IssueList(issue => issue.html_url);
             set.add(issues);
             heading(`Processing target: '${processor.target}' with processor: '${processor.name}'`);
-
             yield processingModule.process(target, config, set, github);
         }
         console.log();
@@ -19255,6 +19296,7 @@ function wrap(store) {
                 fromCache = true;
             }
             else {
+                console.log(`[${err.status}]`);
                 throw err;
             }
         }
