@@ -112,6 +112,10 @@ export async function generate(token: string, configYaml: string): Promise<Repor
         target.columnMap = {}
       }
 
+      if (!target.stages) {
+        continue
+      }
+
       const defaultStages = ['Proposed', 'Accepted', 'In-Progress', 'Done', 'Unmapped']
       for (const phase of defaultStages) {
         if (!target.columnMap[phase]) {
@@ -194,27 +198,6 @@ export async function generate(token: string, configYaml: string): Promise<Repor
 
       const reportGenerator = loadRuntimeModule('report', reportModule) as ProjectReportBuilder
 
-      // if it's a relative path, find in the workflow repo relative path.
-      // this allows for consume of action to create their own report sections
-      // else look for built-ins
-      // console.log(`Report module ${reportModule}`)
-      // let reportModulePath
-
-      // if (reportModule.startsWith('./')) {
-      //   reportModulePath = path.join(process.env['GITHUB_WORKSPACE'], `${reportModule}`)
-      // } else {
-      //   reportModulePath = path.join(__dirname, `./reports/${reportSection.name}`)
-      // }
-
-      // console.log(`Loading: ${reportModulePath}`)
-
-      // if (!fs.existsSync(reportModulePath)) {
-      //   throw new Error(`Report not found: ${reportSection.name}`)
-      // }
-
-      // /* eslint-disable-next-line @typescript-eslint/no-var-requires */
-      // const reportGenerator = require(reportModulePath) as ProjectReportBuilder
-
       // overlay user settings over default settings
       const config = reportGenerator.getDefaultConfiguration()
       for (const setting in reportSection.config || {}) {
@@ -235,6 +218,7 @@ export async function generate(token: string, configYaml: string): Promise<Repor
         console.log(`Crawling target: '${targetName}' for report: '${report.name}', section '${reportSection.name}'`)
         console.log('-------------------------------------------------------------------------------')
         const target = crawlCfg[targetName]
+        console.log(`Stages: ${target.stages}`)
         targets.push(target)
 
         if (reportGenerator.reportType !== 'any' && reportGenerator.reportType !== target.type) {

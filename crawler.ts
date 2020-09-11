@@ -20,10 +20,14 @@ export class Crawler {
     // TODO: eventually deprecate ProjectData and only have distinct set
     let data: ProjectIssue[]
     if (target.type === 'project') {
-      const projectCrawler = new ProjectCrawler(this.github)
+      const projectCrawler = new ProjectCrawler(this.github, target.stages)
       data = await projectCrawler.crawl(target)
     } else if (target.type === 'repo') {
       console.log(`crawling repo ${target.htmlUrl}`)
+      if (target.stages) {
+        throw new Error('Invalid config.  repo targets do not have stages')
+      }
+
       const repoCrawler = new RepoCrawler(this.github)
       data = await repoCrawler.crawl(target)
     } else {
@@ -72,6 +76,7 @@ class RepoCrawler {
 
 class ProjectCrawler {
   github: GitHubClient
+  stages: boolean
 
   // cache the resolution of stage names for a column
   // a columns by stage names are the default and resolve immediately
@@ -82,7 +87,7 @@ class ProjectCrawler {
     done: 'Done'
   }
 
-  constructor(client: GitHubClient) {
+  constructor(client: GitHubClient, stages: boolean) {
     this.github = client
   }
 
@@ -106,6 +111,10 @@ class ProjectCrawler {
       }
 
       mappedColumns = mappedColumns.concat(colNames)
+    }
+
+    if (!this.stages && mappedColumns.length > 0) {
+      throw new Error('Project target has mapped columns but stages is false.  Set stages: true')
     }
 
     let seenUnmappedColumns: string[] = []
@@ -142,9 +151,14 @@ class ProjectCrawler {
         const issueCard = await this.github.getIssueForCard(card)
 
         if (issueCard) {
-          this.processCard(issueCard, projectData.id, target, eventCallback)
+          issueCard['project_stage'] = 'None'
+          if (this.stages) {
+            this.processCard(issueCard, projectData.id, target, eventCallback)
+            issueCard['project_stage'] = this.getStageFromColumn(column.name, target)
+          }
+
           issueCard['project_column'] = column.name
-          issueCard['project_stage'] = this.getStageFromColumn(column.name, target)
+
           console.log(`stage: ${issueCard.project_stage}`)
           console.log()
           issues.push(issueCard)
@@ -165,7 +179,7 @@ class ProjectCrawler {
 
     console.log('Done processing.')
     console.log()
-    if (seenUnmappedColumns.length > 0) {
+    if (this.stages && seenUnmappedColumns.length > 0) {
       console.log()
       console.log(`WARNING: there are unmapped columns mentioned in existing cards on the project board`)
       seenUnmappedColumns = seenUnmappedColumns.map(col => `"${col}"`)

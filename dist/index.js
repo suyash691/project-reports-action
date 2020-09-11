@@ -363,7 +363,7 @@ class GitHubClient {
                     repo,
                     name
                 });
-                console.log(`${res.data} exists`);
+                console.log(`${name} exists`);
                 return;
             }
             catch (_a) {
@@ -384,7 +384,7 @@ class GitHubClient {
             const issueParts = this.issueParts(issueUrl);
             yield this.ensureLabel(issueParts.owner, issueParts.repo, name, color);
             const labels = [name];
-            yield this.octokit.issues.addLabels(Object.assign(Object.assign({}, issueParts), { labels }));
+            const res = yield this.octokit.issues.addLabels(Object.assign(Object.assign({}, issueParts), { labels }));
             console.log('added');
         });
     }
@@ -1533,11 +1533,14 @@ class Crawler {
             // TODO: eventually deprecate ProjectData and only have distinct set
             let data;
             if (target.type === 'project') {
-                const projectCrawler = new ProjectCrawler(this.github);
+                const projectCrawler = new ProjectCrawler(this.github, target.stages);
                 data = yield projectCrawler.crawl(target);
             }
             else if (target.type === 'repo') {
                 console.log(`crawling repo ${target.htmlUrl}`);
+                if (target.stages) {
+                    throw new Error('Invalid config.  repo targets do not have stages');
+                }
                 const repoCrawler = new RepoCrawler(this.github);
                 data = yield repoCrawler.crawl(target);
             }
@@ -1580,7 +1583,7 @@ class RepoCrawler {
     }
 }
 class ProjectCrawler {
-    constructor(client) {
+    constructor(client, stages) {
         // cache the resolution of stage names for a column
         // a columns by stage names are the default and resolve immediately
         this.resolvedColumns = {
@@ -1607,6 +1610,9 @@ class ProjectCrawler {
                     throw new Error(`Invalid config. column map for ${stageName} is not an array`);
                 }
                 mappedColumns = mappedColumns.concat(colNames);
+            }
+            if (!this.stages && mappedColumns.length > 0) {
+                throw new Error('Project target has mapped columns but stages is false.  Set stages: true');
             }
             let seenUnmappedColumns = [];
             for (const column of columns) {
@@ -1635,9 +1641,12 @@ class ProjectCrawler {
                     // read and build the event list once
                     const issueCard = yield this.github.getIssueForCard(card);
                     if (issueCard) {
-                        this.processCard(issueCard, projectData.id, target, eventCallback);
+                        issueCard['project_stage'] = 'None';
+                        if (this.stages) {
+                            this.processCard(issueCard, projectData.id, target, eventCallback);
+                            issueCard['project_stage'] = this.getStageFromColumn(column.name, target);
+                        }
                         issueCard['project_column'] = column.name;
-                        issueCard['project_stage'] = this.getStageFromColumn(column.name, target);
                         console.log(`stage: ${issueCard.project_stage}`);
                         console.log();
                         issues.push(issueCard);
@@ -1657,7 +1666,7 @@ class ProjectCrawler {
             }
             console.log('Done processing.');
             console.log();
-            if (seenUnmappedColumns.length > 0) {
+            if (this.stages && seenUnmappedColumns.length > 0) {
                 console.log();
                 console.log(`WARNING: there are unmapped columns mentioned in existing cards on the project board`);
                 seenUnmappedColumns = seenUnmappedColumns.map(col => `"${col}"`);
@@ -3105,7 +3114,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.IssueList = exports.getProjectStageIssues = exports.ProjectStages = exports.fuzzyMatch = exports.sumCardProperty = exports.getLastCommentDateField = exports.getLastCommentField = exports.getStringFromLabel = exports.getCountFromLabel = exports.filterByLabel = exports.repoPropsFromUrl = void 0;
+exports.IssueList = exports.getProjectStageIssues = exports.ProjectStages = exports.extractUrlsFromChecklist = exports.fuzzyMatch = exports.sumCardProperty = exports.getLastCommentDateField = exports.getLastCommentField = exports.getStringFromLabel = exports.getCountFromLabel = exports.filterByLabel = exports.repoPropsFromUrl = void 0;
 const clone_1 = __importDefault(__webpack_require__(97));
 const moment_1 = __importDefault(__webpack_require__(482));
 const os = __importStar(__webpack_require__(87));
@@ -3218,6 +3227,10 @@ function fuzzyMatch(content, match) {
     return isMatch;
 }
 exports.fuzzyMatch = fuzzyMatch;
+function extractUrlsFromChecklist(body) {
+    return (body === null || body === void 0 ? void 0 : body.match(/(?<=-\s*\[.*?\].*?)(https?:\/{2}(?:[/-\w.]|(?:%[\da-fA-F]{2}))+)/g)) || [];
+}
+exports.extractUrlsFromChecklist = extractUrlsFromChecklist;
 // stages more discoverable
 exports.ProjectStages = {
     Proposed: 'Proposed',
@@ -3400,7 +3413,7 @@ class IssueList {
                     if (!addedTime) {
                         addedTime = eventDateTime;
                     }
-                    if (!event.project_card.stage_name) {
+                    if (issue.project_stage !== 'None' && !event.project_card.stage_name) {
                         throw new Error(`stage_name should have been set already for ${event.project_card.column_name}`);
                     }
                     toStage = event.project_card.stage_name;
@@ -7113,6 +7126,9 @@ function generate(token, configYaml) {
                 if (!target.columnMap) {
                     target.columnMap = {};
                 }
+                if (!target.stages) {
+                    continue;
+                }
                 const defaultStages = ['Proposed', 'Accepted', 'In-Progress', 'Done', 'Unmapped'];
                 for (const phase of defaultStages) {
                     if (!target.columnMap[phase]) {
@@ -7174,22 +7190,6 @@ function generate(token, configYaml) {
                 output += `&nbsp;  ${os.EOL}`;
                 const reportModule = `${reportSection.name}`;
                 const reportGenerator = loadRuntimeModule('report', reportModule);
-                // if it's a relative path, find in the workflow repo relative path.
-                // this allows for consume of action to create their own report sections
-                // else look for built-ins
-                // console.log(`Report module ${reportModule}`)
-                // let reportModulePath
-                // if (reportModule.startsWith('./')) {
-                //   reportModulePath = path.join(process.env['GITHUB_WORKSPACE'], `${reportModule}`)
-                // } else {
-                //   reportModulePath = path.join(__dirname, `./reports/${reportSection.name}`)
-                // }
-                // console.log(`Loading: ${reportModulePath}`)
-                // if (!fs.existsSync(reportModulePath)) {
-                //   throw new Error(`Report not found: ${reportSection.name}`)
-                // }
-                // /* eslint-disable-next-line @typescript-eslint/no-var-requires */
-                // const reportGenerator = require(reportModulePath) as ProjectReportBuilder
                 // overlay user settings over default settings
                 const config = reportGenerator.getDefaultConfiguration();
                 for (const setting in reportSection.config || {}) {
@@ -7207,6 +7207,7 @@ function generate(token, configYaml) {
                     console.log(`Crawling target: '${targetName}' for report: '${report.name}', section '${reportSection.name}'`);
                     console.log('-------------------------------------------------------------------------------');
                     const target = crawlCfg[targetName];
+                    console.log(`Stages: ${target.stages}`);
                     targets.push(target);
                     if (reportGenerator.reportType !== 'any' && reportGenerator.reportType !== target.type) {
                         throw new Error(`Report target mismatch.  Target is of type ${target.type} but report section is ${reportGenerator.reportType}`);
@@ -19268,19 +19269,18 @@ var store_1 = __webpack_require__(221);
 Object.defineProperty(exports, "FileSystemStore", { enumerable: true, get: function () { return store_1.FileSystemStore; } });
 function wrap(store) {
     return (request, options) => __awaiter(this, void 0, void 0, function* () {
-        // only cache GET requests
-        if (options.method !== 'GET') {
-            return request;
-        }
         if (process.env['https_proxy']) {
             options.request = { agent: new https_proxy_agent_1.HttpsProxyAgent(process.env['https_proxy']) };
         }
         //
         // check whether in cache. if so, return the etag
         //
-        const etag = yield store.check(options);
-        if (etag) {
-            options.headers['If-None-Match'] = etag;
+        let etag;
+        if (options.method === 'GET') {
+            etag = yield store.check(options);
+            if (etag) {
+                options.headers['If-None-Match'] = etag;
+            }
         }
         // make the request.
         let response;

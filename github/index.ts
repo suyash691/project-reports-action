@@ -150,7 +150,7 @@ export class GitHubClient {
         name
       })
 
-      console.log(`${res.data} exists`)
+      console.log(`${name} exists`)
       return
     } catch {
       console.log(`Creating label ${name} ${color}`)
@@ -171,7 +171,7 @@ export class GitHubClient {
     await this.ensureLabel(issueParts.owner, issueParts.repo, name, color)
 
     const labels = [name]
-    await this.octokit.issues.addLabels({
+    const res = await this.octokit.issues.addLabels({
       ...issueParts,
       labels
     })

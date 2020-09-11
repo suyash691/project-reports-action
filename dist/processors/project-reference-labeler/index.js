@@ -101,7 +101,7 @@ function getDefaultConfiguration() {
         'process-with-label': 'feature',
         'column-label-prefix': '> ',
         'linked-label-prefix': '>> ',
-        'label-color': '#FFFFFF',
+        'label-color': 'FFFFFF',
         // need to actually set to true, otherwise it's just a preview of what it would write
         'write-labels': false
     };
@@ -130,7 +130,7 @@ function ensureOnlyLabel(github, issue, labelName, prefix, config) {
                 if (label.name.trim().startsWith(prefix)) {
                     console.log(`Removing label: ${label.name}`);
                     if (write) {
-                        github.removeIssueLabel(issue.html_url, label.name);
+                        yield github.removeIssueLabel(issue.html_url, label.name);
                     }
                 }
             }

@@ -17,6 +17,7 @@ export interface CrawlingTarget {
   columnMap: {[key: string]: string[]}
   // only needed for type project
   projectId?: number
+  stages: boolean
 }
 
 export type CrawlingConfig = {[name: string]: CrawlingTarget}
