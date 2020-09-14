@@ -20,7 +20,7 @@ export class Crawler {
     // TODO: eventually deprecate ProjectData and only have distinct set
     let data: ProjectIssue[]
     if (target.type === 'project') {
-      const projectCrawler = new ProjectCrawler(this.github, target.stages)
+      const projectCrawler = new ProjectCrawler(this.github)
       data = await projectCrawler.crawl(target)
     } else if (target.type === 'repo') {
       console.log(`crawling repo ${target.htmlUrl}`)
@@ -76,7 +76,6 @@ class RepoCrawler {
 
 class ProjectCrawler {
   github: GitHubClient
-  stages: boolean
 
   // cache the resolution of stage names for a column
   // a columns by stage names are the default and resolve immediately
@@ -87,7 +86,7 @@ class ProjectCrawler {
     done: 'Done'
   }
 
-  constructor(client: GitHubClient, stages: boolean) {
+  constructor(client: GitHubClient) {
     this.github = client
   }
 
@@ -113,7 +112,7 @@ class ProjectCrawler {
       mappedColumns = mappedColumns.concat(colNames)
     }
 
-    if (!this.stages && mappedColumns.length > 0) {
+    if (!target.stages && mappedColumns.length > 0) {
       throw new Error('Project target has mapped columns but stages is false.  Set stages: true')
     }
 
@@ -152,7 +151,7 @@ class ProjectCrawler {
 
         if (issueCard) {
           issueCard['project_stage'] = 'None'
-          if (this.stages) {
+          if (target.stages) {
             this.processCard(issueCard, projectData.id, target, eventCallback)
             issueCard['project_stage'] = this.getStageFromColumn(column.name, target)
           }
@@ -179,7 +178,7 @@ class ProjectCrawler {
 
     console.log('Done processing.')
     console.log()
-    if (this.stages && seenUnmappedColumns.length > 0) {
+    if (target.stages && seenUnmappedColumns.length > 0) {
       console.log()
       console.log(`WARNING: there are unmapped columns mentioned in existing cards on the project board`)
       seenUnmappedColumns = seenUnmappedColumns.map(col => `"${col}"`)

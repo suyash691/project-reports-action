@@ -879,7 +879,7 @@ class IssueList {
                     currentStage = toStage;
                     currentColumn = event.project_card.column_name;
                 }
-                if (event.project_card && event.project_card.previous_column_name) {
+                if (issue.project_stage !== 'None' && event.project_card && event.project_card.previous_column_name) {
                     if (!event.project_card.previous_stage_name) {
                         throw new Error(`previous_stage_name should have been set already for ${event.project_card.previous_column_name}`);
                     }

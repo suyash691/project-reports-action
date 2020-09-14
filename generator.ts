@@ -90,10 +90,14 @@ export async function generate(token: string, configYaml: string): Promise<Repor
     report.details.fullPath = path.join(report.details.rootPath, snapshot.datetimeString)
     report.details.dataPath = path.join(report.details.fullPath, 'data')
 
-    report.title = mustache.render(report.title, {
-      config: config,
-      report: report
-    })
+    if (report.title) {
+      report.title = mustache.render(report.title, {
+        config: config,
+        report: report
+      })
+    } else {
+      report.title = ''
+    }
   }
 
   let crawlCfg: CrawlingConfig
@@ -184,6 +188,11 @@ export async function generate(token: string, configYaml: string): Promise<Repor
     console.log()
     console.log(`Generating ${report.name} ...`)
     await createReportPath(report)
+
+    if (!report.sections || report.sections.length == 0) {
+      console.log('WARNING: report has no sections.  continuing')
+      continue
+    }
 
     for (let sectionIdx = 0; sectionIdx < report.sections.length; sectionIdx++) {
       const reportSection = report.sections[sectionIdx]

@@ -1533,7 +1533,7 @@ class Crawler {
             // TODO: eventually deprecate ProjectData and only have distinct set
             let data;
             if (target.type === 'project') {
-                const projectCrawler = new ProjectCrawler(this.github, target.stages);
+                const projectCrawler = new ProjectCrawler(this.github);
                 data = yield projectCrawler.crawl(target);
             }
             else if (target.type === 'repo') {
@@ -1583,7 +1583,7 @@ class RepoCrawler {
     }
 }
 class ProjectCrawler {
-    constructor(client, stages) {
+    constructor(client) {
         // cache the resolution of stage names for a column
         // a columns by stage names are the default and resolve immediately
         this.resolvedColumns = {
@@ -1611,7 +1611,7 @@ class ProjectCrawler {
                 }
                 mappedColumns = mappedColumns.concat(colNames);
             }
-            if (!this.stages && mappedColumns.length > 0) {
+            if (!target.stages && mappedColumns.length > 0) {
                 throw new Error('Project target has mapped columns but stages is false.  Set stages: true');
             }
             let seenUnmappedColumns = [];
@@ -1642,7 +1642,7 @@ class ProjectCrawler {
                     const issueCard = yield this.github.getIssueForCard(card);
                     if (issueCard) {
                         issueCard['project_stage'] = 'None';
-                        if (this.stages) {
+                        if (target.stages) {
                             this.processCard(issueCard, projectData.id, target, eventCallback);
                             issueCard['project_stage'] = this.getStageFromColumn(column.name, target);
                         }
@@ -1666,7 +1666,7 @@ class ProjectCrawler {
             }
             console.log('Done processing.');
             console.log();
-            if (this.stages && seenUnmappedColumns.length > 0) {
+            if (target.stages && seenUnmappedColumns.length > 0) {
                 console.log();
                 console.log(`WARNING: there are unmapped columns mentioned in existing cards on the project board`);
                 seenUnmappedColumns = seenUnmappedColumns.map(col => `"${col}"`);
@@ -3421,7 +3421,7 @@ class IssueList {
                     currentStage = toStage;
                     currentColumn = event.project_card.column_name;
                 }
-                if (event.project_card && event.project_card.previous_column_name) {
+                if (issue.project_stage !== 'None' && event.project_card && event.project_card.previous_column_name) {
                     if (!event.project_card.previous_stage_name) {
                         throw new Error(`previous_stage_name should have been set already for ${event.project_card.previous_column_name}`);
                     }
@@ -7106,10 +7106,15 @@ function generate(token, configYaml) {
             report.details.rootPath = path.join(snapshot.rootPath, sanitize_filename_1.default(report.name));
             report.details.fullPath = path.join(report.details.rootPath, snapshot.datetimeString);
             report.details.dataPath = path.join(report.details.fullPath, 'data');
-            report.title = mustache.render(report.title, {
-                config: config,
-                report: report
-            });
+            if (report.title) {
+                report.title = mustache.render(report.title, {
+                    config: config,
+                    report: report
+                });
+            }
+            else {
+                report.title = '';
+            }
         }
         let crawlCfg;
         if (typeof config.targets === 'string') {
@@ -7182,6 +7187,10 @@ function generate(token, configYaml) {
             console.log();
             console.log(`Generating ${report.name} ...`);
             yield createReportPath(report);
+            if (!report.sections || report.sections.length == 0) {
+                console.log('WARNING: report has no sections.  continuing');
+                continue;
+            }
             for (let sectionIdx = 0; sectionIdx < report.sections.length; sectionIdx++) {
                 const reportSection = report.sections[sectionIdx];
                 // We only support rollup of repo issues.
