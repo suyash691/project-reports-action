@@ -181,8 +181,7 @@ export async function generate(token: string, configYaml: string): Promise<Repor
   for (const report of config.reports || []) {
     let output = ''
 
-    // gather all the markdown files in the root to delete before writing new files
-    deleteFilesInPath(report.details.rootPath)
+    ensureCleanReportsFolder(report.details.rootPath)
 
     output += getReportHeading(report)
     console.log()
@@ -315,18 +314,11 @@ function getReportHeading(report: ReportConfig) {
   return lines.join(os.EOL)
 }
 
-async function deleteFilesInPath(targetPath: string) {
+async function ensureCleanReportsFolder(targetPath: string) {
   console.log()
-  if (!fs.existsSync(targetPath)) {
-    return
-  }
-
-  let existingRootFiles = fs.readdirSync(targetPath).map(item => path.join(targetPath, item))
-  existingRootFiles = existingRootFiles.filter(item => fs.lstatSync(item).isFile())
-  for (const file of existingRootFiles) {
-    console.log(`cleaning up ${file}`)
-    fs.unlinkSync(file)
-  }
+  console.log(`Cleaning report path: ${targetPath}`)
+  fs.rmdirSync(targetPath, {recursive: true})
+  fs.mkdirSync(targetPath, {recursive: true})
 }
 
 async function writeDrillIn(

@@ -7181,8 +7181,7 @@ function generate(token, configYaml) {
         console.log('Generating Reports');
         for (const report of config.reports || []) {
             let output = '';
-            // gather all the markdown files in the root to delete before writing new files
-            deleteFilesInPath(report.details.rootPath);
+            ensureCleanReportsFolder(report.details.rootPath);
             output += getReportHeading(report);
             console.log();
             console.log(`Generating ${report.name} ...`);
@@ -7285,18 +7284,12 @@ function getReportHeading(report) {
     }
     return lines.join(os.EOL);
 }
-function deleteFilesInPath(targetPath) {
+function ensureCleanReportsFolder(targetPath) {
     return __awaiter(this, void 0, void 0, function* () {
         console.log();
-        if (!fs.existsSync(targetPath)) {
-            return;
-        }
-        let existingRootFiles = fs.readdirSync(targetPath).map(item => path.join(targetPath, item));
-        existingRootFiles = existingRootFiles.filter(item => fs.lstatSync(item).isFile());
-        for (const file of existingRootFiles) {
-            console.log(`cleaning up ${file}`);
-            fs.unlinkSync(file);
-        }
+        console.log(`Cleaning report path: ${targetPath}`);
+        fs.rmdirSync(targetPath, { recursive: true });
+        fs.mkdirSync(targetPath, { recursive: true });
     });
 }
 function writeDrillIn(report, reportModule, identifier, cards, contents) {
