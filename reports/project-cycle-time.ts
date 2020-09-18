@@ -11,9 +11,9 @@ export {reportType}
 
 export function getDefaultConfiguration(): any {
   return <any>{
-    'report-on-label': 'feature',
+    'report-on-label': 'Feature',
     'average-limit': 21,
-    'eightieth-limit': 21,
+    limit: 21,
     'bucket-count': 4,
     'bucket-days': 7,
     'window-days': 28
@@ -118,7 +118,7 @@ export function process(
       count: cycleCount,
       averageCycleTime: averageCycleTime,
       eightiethCycleTime: eightieth,
-      flag: averageCycleTime > config['average-limit'] || eightieth > config['eightieth-limit']
+      flag: averageCycleTime > config['limit'] || config['average-limit']
     }
 
     ago.subtract(config['bucket-days'], 'days')

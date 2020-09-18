@@ -7280,6 +7280,7 @@ function generate(token, configYaml) {
                 const sectionPath = `${sectionIdx.toString().padStart(2, '0')}-${reportModule}`;
                 yield writeSectionData(report, sectionPath, config, {
                     type: reportModule,
+                    config: config,
                     output: processed
                 });
                 report.kind = report.kind || '';

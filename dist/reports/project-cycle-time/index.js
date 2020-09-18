@@ -858,9 +858,9 @@ const reportType = 'project';
 exports.reportType = reportType;
 function getDefaultConfiguration() {
     return {
-        'report-on-label': 'feature',
+        'report-on-label': 'Feature',
         'average-limit': 21,
-        'eightieth-limit': 21,
+        limit: 21,
         'bucket-count': 4,
         'bucket-days': 7,
         'window-days': 28
@@ -928,7 +928,7 @@ function process(config, issueList, drillIn) {
             count: cycleCount,
             averageCycleTime: averageCycleTime,
             eightiethCycleTime: eightieth,
-            flag: averageCycleTime > config['average-limit'] || eightieth > config['eightieth-limit']
+            flag: averageCycleTime > config['limit'] || config['average-limit']
         };
         ago.subtract(config['bucket-days'], 'days');
         // sliding window
