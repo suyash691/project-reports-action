@@ -7182,9 +7182,9 @@ function generate(token, configYaml) {
                         target.columnMap[phase] = [];
                     }
                 }
-                target.columnMap['Proposed'].push('Proposed', 'Not Started');
-                target.columnMap['In-Progress'].push('In-Progress', 'In progress', 'InProgress', 'Started');
-                target.columnMap['Accepted'].push('Accepted', 'Approved', 'Up Next');
+                target.columnMap['Proposed'].push('Proposed', 'New', 'Not Started', 'Ready for Triage');
+                target.columnMap['Accepted'].push('Accepted', 'Approved', 'Ready for Work', 'Up Next');
+                target.columnMap['In-Progress'].push('In-Progress', 'In progress', 'InProgress', 'Active', 'Started');
                 target.columnMap['Done'].push('Done', 'Completed', 'Complete');
                 // Add some common mappings
                 target.columnMap['Proposed'].push('Triage', 'Not Started');
