@@ -8,7 +8,7 @@ const now = moment()
 const reportType = 'project'
 export {reportType}
 
-/*
+/**
  * Reads the latest status from a comment and creates the corresponding label
  */
 export function getDefaultConfiguration(): any {
