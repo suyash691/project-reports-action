@@ -1,4 +1,4 @@
-import moment = require('moment')
+import * as moment from 'moment'
 import {GitHubClient} from '../github'
 import {CrawlingTarget} from '../interfaces'
 import {getLastCommentField, IssueList, ProjectIssue} from '../project-reports-lib'
