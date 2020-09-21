@@ -91,7 +91,7 @@ const url = __importStar(__webpack_require__(835));
 const now = moment();
 const reportType = 'project';
 exports.reportType = reportType;
-/*
+/**
  * Creates labels on referenced issues with a specified label
  */
 function getDefaultConfiguration() {

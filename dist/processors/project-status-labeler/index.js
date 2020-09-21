@@ -766,12 +766,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.process = exports.getDefaultConfiguration = exports.reportType = void 0;
-const moment = __webpack_require__(431);
 const project_reports_lib_1 = __webpack_require__(189);
-const now = moment();
 const reportType = 'project';
 exports.reportType = reportType;
-/*
+/**
  * Reads the latest status from a comment and creates the corresponding label
  */
 function getDefaultConfiguration() {

@@ -1,18 +1,23 @@
-import * as moment from 'moment'
 import {GitHubClient} from '../github'
 import {CrawlingTarget} from '../interfaces'
 import {getLastCommentField, IssueList, ProjectIssue} from '../project-reports-lib'
 
-const now = moment()
-
 const reportType = 'project'
 export {reportType}
+
+export type ProjectStatusLabelerConfig = {
+  'process-with-label': string
+  'status-field-name': string
+  'status-labels': string[]
+  'status-colors': string[]
+  'write-labels': boolean
+}
 
 /**
  * Reads the latest status from a comment and creates the corresponding label
  */
-export function getDefaultConfiguration(): any {
-  return <any>{
+export function getDefaultConfiguration(): ProjectStatusLabelerConfig {
+  return {
     'process-with-label': 'feature',
     'status-field-name': '### Status',
 
@@ -67,7 +72,7 @@ async function ensureOnlyLabel(github: GitHubClient, issue: ProjectIssue, labelN
 // get alphanumeric clean version of string (strip special chars). spaces to chars.  remove common filler words (a, the, &, and)
 export async function process(
   target: CrawlingTarget,
-  config: any,
+  config: ProjectStatusLabelerConfig,
   data: IssueList,
   github: GitHubClient
 ): Promise<void> {
@@ -77,6 +82,7 @@ export async function process(
   for (const issue of data.getItems()) {
     console.log(`issue : ${issue.title}`)
     console.log(`url   : ${issue.html_url}`)
+
     const processLabel = issue.labels.filter(
       label => label.name.toLowerCase() === config['process-with-label'].toLowerCase()
     )
