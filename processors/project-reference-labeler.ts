@@ -9,7 +9,7 @@ const now = moment()
 const reportType = 'project'
 export {reportType}
 
-/*
+/**
  * Creates labels on referenced issues with a specified label
  */
 export function getDefaultConfiguration(): any {
