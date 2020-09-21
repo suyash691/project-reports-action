@@ -135,7 +135,7 @@ export async function generate(token: string, configYaml: string): Promise<Repor
         }
       }
 
-      target.columnMap['Proposed'].push('Proposed', 'New', 'Not Started', 'Ready for Triage')
+      target.columnMap['Proposed'].push('Proposed', 'New', 'Ready for Review', 'Ready for Triage', 'Not Started')
       target.columnMap['Accepted'].push('Accepted', 'Approved', 'Ready for Work', 'Up Next')
       target.columnMap['In-Progress'].push('In-Progress', 'In progress', 'InProgress', 'Active', 'Started')
       target.columnMap['Done'].push('Done', 'Completed', 'Complete')
