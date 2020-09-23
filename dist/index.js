@@ -325,8 +325,10 @@ class GitHubClient {
     }
     getCardsForColumns(colId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const cards = yield this.octokit.projects.listCards({ column_id: colId });
-            return cards.data;
+            return yield this.octokit.paginate('GET /projects/columns/:column_id/cards', {
+                column_id: colId,
+                per_page: 100
+            });
         });
     }
     getIssueComments(owner, repo, issue_number) {
@@ -3272,6 +3274,7 @@ exports.ProjectStages = {
     Proposed: 'Proposed',
     Accepted: 'Accepted',
     InProgress: 'In-Progress',
+    Blocked: 'Blocked',
     Done: 'Done',
     Missing: 'Missing'
 };
@@ -3295,15 +3298,23 @@ const stageLevel = {
     None: 0,
     Proposed: 1,
     Accepted: 2,
-    'In-Progress': 3,
-    Done: 4,
-    Unmapped: 5
+    Blocked: 3,
+    'In-Progress': 4,
+    Done: 5,
+    Unmapped: 6
 };
 class IssueList {
     constructor(identifier) {
         // keep in order indexed by level above
         // TODO: unify both to avoid out of sync problems
-        this.stageAtNames = ['none', 'project_proposed_at', 'project_accepted_at', 'project_in_progress_at', 'project_done_at'];
+        this.stageAtNames = [
+            'none',
+            'project_proposed_at',
+            'project_accepted_at',
+            'project_blocked_at',
+            'project_in_progress_at',
+            'project_done_at'
+        ];
         this.seen = new Map();
         this.identifier = identifier;
         this.items = [];
@@ -7167,12 +7178,13 @@ function generate(token, configYaml) {
                 if (!target.stages) {
                     continue;
                 }
-                const defaultStages = ['Proposed', 'Accepted', 'In-Progress', 'Done', 'Unmapped'];
+                const defaultStages = ['Proposed', 'Accepted', 'Blocked', 'In-Progress', 'Done', 'Unmapped'];
                 for (const phase of defaultStages) {
                     if (!target.columnMap[phase]) {
                         target.columnMap[phase] = [];
                     }
                 }
+                target.columnMap['Blocked'].push('Blocked');
                 target.columnMap['Proposed'].push('Proposed', 'New', 'Ready for Review', 'Ready for Triage', 'Not Started');
                 target.columnMap['Accepted'].push('Accepted', 'Approved', 'Ready for Work', 'Up Next');
                 target.columnMap['In-Progress'].push('In-Progress', 'In progress', 'InProgress', 'Active', 'Started');

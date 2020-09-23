@@ -48,6 +48,7 @@ export type GroupByData = {
 export interface StageBreakdown {
   proposed: ProjectIssue[]
   accepted: ProjectIssue[]
+  blocked: ProjectIssue[]
   inProgress: ProjectIssue[]
   inProgressLimits: LimitsData
   done: ProjectIssue[]
@@ -71,6 +72,10 @@ function getBreakdown(
   issues: ProjectIssue[],
   drillIn: (identifier: string, title: string, cards: ProjectIssue[]) => void
 ): GroupByData {
+  console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+  console.log(`Breakdown for ${name}`)
+  console.log()
+
   const groupByData: GroupByData = <GroupByData>{}
 
   const stageData: ProjectStageIssues = rptLib.getProjectStageIssues(issues)
@@ -84,6 +89,9 @@ function getBreakdown(
 
   groupByData.stages.inProgress = stageData[ProjectStages.InProgress] || []
   drillIn(drillInName(name, 'in-progress'), `${name} in progress`, groupByData.stages.inProgress)
+
+  groupByData.stages.blocked = stageData[ProjectStages.Blocked] || []
+  drillIn(drillInName(name, 'blocked'), `${name} blocked`, groupByData.stages.blocked)
 
   // get the limit from config by fuzzy matching the group label with the setting
   let limit = Number.MAX_VALUE
@@ -101,6 +109,10 @@ function getBreakdown(
 
   groupByData.stages.done = stageData[ProjectStages.Done] || []
   drillIn(drillInName(name, 'done'), `${name} done`, groupByData.stages.done)
+
+  for (const stage in groupByData.stages) {
+    console.log(`Stage: ${stage}, count: ${groupByData.stages[stage].length}`)
+  }
 
   groupByData.flagged = <Flagged>{}
 
@@ -142,6 +154,10 @@ function getBreakdown(
     return d && !isNaN(d.valueOf()) && moment(d).isBefore(now)
   })
   drillIn(drillInName(name, 'past-target'), `${name} past the target date`, groupByData.flagged.pastTarget)
+
+  for (const flagged in groupByData.flagged) {
+    console.log(`Flag: ${flagged}, count: ${groupByData.flagged[flagged].length}`)
+  }
 
   return groupByData
 }

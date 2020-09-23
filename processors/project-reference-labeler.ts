@@ -18,6 +18,7 @@ export function getDefaultConfiguration(): any {
     'column-label-prefix': '> ',
     'linked-label-prefix': '>> ',
     'label-color': 'FFFFFF',
+    'skip-columns': ['Done', 'Complete'],
     // need to actually set to true, otherwise it's just a preview of what it would write
     'write-labels': false
   }
@@ -79,6 +80,12 @@ export async function process(
 ): Promise<void> {
   for (const issue of data.getItems()) {
     console.log()
+    if (issue.project_column && config['skip-columns'] && config['skip-columns'].indexOf(issue.project_column) >= 0) {
+      console.log(`Skipping issue in column ${issue.project_column}`)
+      console.log()
+      continue
+    }
+
     console.log(`initiative : ${issue.project_column}`)
     console.log(`epic       : ${issue.title}`)
 

@@ -108,8 +108,10 @@ export class GitHubClient {
   }
 
   public async getCardsForColumns(colId: number) {
-    const cards = await this.octokit.projects.listCards({column_id: colId})
-    return cards.data
+    return await this.octokit.paginate('GET /projects/columns/:column_id/cards', {
+      column_id: colId,
+      per_page: 100
+    })
   }
 
   public async getIssueComments(owner: string, repo: string, issue_number: string): Promise<IssueComment[]> {

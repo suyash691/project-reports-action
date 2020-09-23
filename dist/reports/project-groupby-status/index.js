@@ -117,6 +117,9 @@ function drillInName(name, column) {
     return `${name}-${column}`.split(' ').join('-');
 }
 function getBreakdown(config, name, issues, drillIn) {
+    console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+    console.log(`Breakdown for ${name}`);
+    console.log();
     const groupByData = {};
     const stageData = rptLib.getProjectStageIssues(issues);
     groupByData.stages = {};
@@ -126,6 +129,8 @@ function getBreakdown(config, name, issues, drillIn) {
     drillIn(drillInName(name, 'accepted'), `${name} accepted`, groupByData.stages.accepted);
     groupByData.stages.inProgress = stageData[project_reports_lib_1.ProjectStages.InProgress] || [];
     drillIn(drillInName(name, 'in-progress'), `${name} in progress`, groupByData.stages.inProgress);
+    groupByData.stages.blocked = stageData[project_reports_lib_1.ProjectStages.Blocked] || [];
+    drillIn(drillInName(name, 'blocked'), `${name} blocked`, groupByData.stages.blocked);
     // get the limit from config by fuzzy matching the group label with the setting
     let limit = Number.MAX_VALUE;
     for (const limitKey in config['limits']) {
@@ -140,6 +145,9 @@ function getBreakdown(config, name, issues, drillIn) {
     };
     groupByData.stages.done = stageData[project_reports_lib_1.ProjectStages.Done] || [];
     drillIn(drillInName(name, 'done'), `${name} done`, groupByData.stages.done);
+    for (const stage in groupByData.stages) {
+        console.log(`Stage: ${stage}, count: ${groupByData.stages[stage].length}`);
+    }
     groupByData.flagged = {};
     const statusRegEx = new RegExp(config['status-label-match']);
     groupByData.flagged.red =
@@ -171,6 +179,9 @@ function getBreakdown(config, name, issues, drillIn) {
         return d && !isNaN(d.valueOf()) && moment(d).isBefore(now);
     });
     drillIn(drillInName(name, 'past-target'), `${name} past the target date`, groupByData.flagged.pastTarget);
+    for (const flagged in groupByData.flagged) {
+        console.log(`Flag: ${flagged}, count: ${groupByData.flagged[flagged].length}`);
+    }
     return groupByData;
 }
 function process(config, issueList, drillIn) {
@@ -749,6 +760,7 @@ exports.ProjectStages = {
     Proposed: 'Proposed',
     Accepted: 'Accepted',
     InProgress: 'In-Progress',
+    Blocked: 'Blocked',
     Done: 'Done',
     Missing: 'Missing'
 };
@@ -772,15 +784,23 @@ const stageLevel = {
     None: 0,
     Proposed: 1,
     Accepted: 2,
-    'In-Progress': 3,
-    Done: 4,
-    Unmapped: 5
+    Blocked: 3,
+    'In-Progress': 4,
+    Done: 5,
+    Unmapped: 6
 };
 class IssueList {
     constructor(identifier) {
         // keep in order indexed by level above
         // TODO: unify both to avoid out of sync problems
-        this.stageAtNames = ['none', 'project_proposed_at', 'project_accepted_at', 'project_in_progress_at', 'project_done_at'];
+        this.stageAtNames = [
+            'none',
+            'project_proposed_at',
+            'project_accepted_at',
+            'project_blocked_at',
+            'project_in_progress_at',
+            'project_done_at'
+        ];
         this.seen = new Map();
         this.identifier = identifier;
         this.items = [];

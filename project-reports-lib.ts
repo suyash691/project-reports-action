@@ -194,6 +194,7 @@ export const ProjectStages = {
   Proposed: 'Proposed',
   Accepted: 'Accepted',
   InProgress: 'In-Progress',
+  Blocked: 'Blocked',
   Done: 'Done',
   Missing: 'Missing'
 }
@@ -311,9 +312,10 @@ const stageLevel = {
   None: 0,
   Proposed: 1,
   Accepted: 2,
-  'In-Progress': 3,
-  Done: 4,
-  Unmapped: 5
+  Blocked: 3,
+  'In-Progress': 4,
+  Done: 5,
+  Unmapped: 6
 }
 
 export class IssueList {
@@ -324,7 +326,14 @@ export class IssueList {
 
   // keep in order indexed by level above
   // TODO: unify both to avoid out of sync problems
-  stageAtNames = ['none', 'project_proposed_at', 'project_accepted_at', 'project_in_progress_at', 'project_done_at']
+  stageAtNames = [
+    'none',
+    'project_proposed_at',
+    'project_accepted_at',
+    'project_blocked_at',
+    'project_in_progress_at',
+    'project_done_at'
+  ]
 
   constructor(identifier: (item) => any) {
     this.seen = new Map()

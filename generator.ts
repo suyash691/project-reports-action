@@ -128,13 +128,14 @@ export async function generate(token: string, configYaml: string): Promise<Repor
         continue
       }
 
-      const defaultStages = ['Proposed', 'Accepted', 'In-Progress', 'Done', 'Unmapped']
+      const defaultStages = ['Proposed', 'Accepted', 'Blocked', 'In-Progress', 'Done', 'Unmapped']
       for (const phase of defaultStages) {
         if (!target.columnMap[phase]) {
           target.columnMap[phase] = []
         }
       }
 
+      target.columnMap['Blocked'].push('Blocked')
       target.columnMap['Proposed'].push('Proposed', 'New', 'Ready for Review', 'Ready for Triage', 'Not Started')
       target.columnMap['Accepted'].push('Accepted', 'Approved', 'Ready for Work', 'Up Next')
       target.columnMap['In-Progress'].push('In-Progress', 'In progress', 'InProgress', 'Active', 'Started')
