@@ -80,6 +80,9 @@ function getBreakdown(
 
   const stageData: ProjectStageIssues = rptLib.getProjectStageIssues(issues)
 
+  //
+  // Breakdown by stages
+  //
   groupByData.stages = <StageBreakdown>{}
   groupByData.stages.proposed = stageData[ProjectStages.Proposed] || []
   drillIn(drillInName(name, 'proposed'), `${name} proposed`, groupByData.stages.proposed)
@@ -114,7 +117,11 @@ function getBreakdown(
     console.log(`Stage: ${stage}, count: ${groupByData.stages[stage].length}`)
   }
 
+  //
+  // Flagging issues for discussion
+  //
   groupByData.flagged = <Flagged>{}
+  issues.filter(issue => issue.project_stage !== ProjectStages.Done)
 
   const statusRegEx = new RegExp(config['status-label-match'])
   groupByData.flagged.red =

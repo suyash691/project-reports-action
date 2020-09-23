@@ -122,6 +122,9 @@ function getBreakdown(config, name, issues, drillIn) {
     console.log();
     const groupByData = {};
     const stageData = rptLib.getProjectStageIssues(issues);
+    //
+    // Breakdown by stages
+    //
     groupByData.stages = {};
     groupByData.stages.proposed = stageData[project_reports_lib_1.ProjectStages.Proposed] || [];
     drillIn(drillInName(name, 'proposed'), `${name} proposed`, groupByData.stages.proposed);
@@ -148,7 +151,11 @@ function getBreakdown(config, name, issues, drillIn) {
     for (const stage in groupByData.stages) {
         console.log(`Stage: ${stage}, count: ${groupByData.stages[stage].length}`);
     }
+    //
+    // Flagging issues for discussion
+    //
     groupByData.flagged = {};
+    issues.filter(issue => issue.project_stage !== project_reports_lib_1.ProjectStages.Done);
     const statusRegEx = new RegExp(config['status-label-match']);
     groupByData.flagged.red =
         issues.filter(issue => rptLib.getStringFromLabel(issue, statusRegEx).toLowerCase() === 'red') || [];
