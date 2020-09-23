@@ -173,14 +173,14 @@ export function process(
   groupData.durationDays = config['flag-in-progress-days']
   groupData.groups = {}
 
-  const issues = issueList.getItems()
+  const issues: ProjectIssue[] = issueList.getItems()
 
   const label = config['report-on-label']
   if (!label) {
     throw new Error('report-on-label is required')
   }
   console.log(`Getting issues for ${label}`)
-  const issuesForLabel =
+  const issuesForLabel: ProjectIssue[] =
     label === '*' ? clone(issues) : clone(rptLib.filterByLabel(issues, label.trim().toLowerCase()) as ProjectIssue[])
   console.log(`Retrieved ${issuesForLabel.length} issues`)
 
@@ -190,12 +190,13 @@ export function process(
     throw new Error('group-by-label-prefix is required')
   }
 
-  const pattern = `(?<=${prefix}).*`
+  const pattern = `(?<=^${prefix}).*`
   const regex = new RegExp(pattern)
   const groupByLabels: string[] = []
   for (const issue of issuesForLabel) {
     const labelValue = (rptLib.getStringFromLabel(issue, regex) || '').trim()
     if (labelValue && groupByLabels.indexOf(labelValue) === -1) {
+      console.log(`'${labelValue}' from ${issue.html_url}`)
       groupByLabels.push(labelValue)
     }
   }

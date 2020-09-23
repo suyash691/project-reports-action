@@ -202,12 +202,13 @@ function process(config, issueList, drillIn) {
     if (!prefix) {
         throw new Error('group-by-label-prefix is required');
     }
-    const pattern = `(?<=${prefix}).*`;
+    const pattern = `(?<=^${prefix}).*`;
     const regex = new RegExp(pattern);
     const groupByLabels = [];
     for (const issue of issuesForLabel) {
         const labelValue = (rptLib.getStringFromLabel(issue, regex) || '').trim();
         if (labelValue && groupByLabels.indexOf(labelValue) === -1) {
+            console.log(`'${labelValue}' from ${issue.html_url}`);
             groupByLabels.push(labelValue);
         }
     }
