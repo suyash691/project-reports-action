@@ -33,7 +33,7 @@ function cleanLabelName(prefix: string, title: string) {
   let words = title.match(/[a-zA-Z0-9&]+/g)
   words = words.filter(word => noiseWords.indexOf(word.toLowerCase()) < 0)
 
-  let label = 'Invalid'
+  let label = `${prefix.trim()} Invalid`
   while (words.length > 0) {
     label = `${prefix.trim()} ${words.join(' ')}`
     if (label.length <= 50) {
