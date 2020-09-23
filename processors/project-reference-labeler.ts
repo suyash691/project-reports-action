@@ -24,7 +24,7 @@ export function getDefaultConfiguration(): any {
   }
 }
 
-const noiseWords = ['the', 'in', 'and', 'of']
+const noiseWords = ['the', 'in', 'and', 'of', '&']
 
 // needs to be less than 50 chars, so we filter down to words, no noise words and then start removing words at end
 function cleanLabelName(prefix: string, title: string) {
@@ -35,10 +35,11 @@ function cleanLabelName(prefix: string, title: string) {
 
   let label = 'Invalid'
   while (words.length > 0) {
-    words.pop()
     label = `${prefix.trim()} ${words.join(' ')}`
     if (label.length <= 50) {
       break
+    } else {
+      words.pop()
     }
   }
 
