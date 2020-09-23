@@ -106,13 +106,21 @@ function getDefaultConfiguration() {
     };
 }
 exports.getDefaultConfiguration = getDefaultConfiguration;
-// const noiseWords = ['the', 'in', 'and', 'of']
+const noiseWords = ['the', 'in', 'and', 'of'];
+// needs to be less than 50 chars, so we filter down to words, no noise words and then start removing words at end
 function cleanLabelName(prefix, title) {
     title = title.replace(/\([^()]*\)/g, '').replace(/ *\[[^\]]*]/, '');
-    const words = title.match(/[a-zA-Z0-9&]+/g);
-    //  words = words.map(item => item.toLowerCase())
-    //words = words.filter(word => noiseWords.indexOf(word) < 0)
-    return `${prefix.trim()} ${words.join(' ')}`;
+    let words = title.match(/[a-zA-Z0-9&]+/g);
+    words = words.filter(word => noiseWords.indexOf(word.toLowerCase()) < 0);
+    let label = 'Invalid';
+    while (words.length > 0) {
+        words.pop();
+        label = `${prefix.trim()} ${words.join(' ')}`;
+        if (label.length <= 50) {
+            break;
+        }
+    }
+    return label;
 }
 // ensures that only a label with this prefix exists
 function ensureOnlyLabel(github, issue, labelName, prefix, config) {
