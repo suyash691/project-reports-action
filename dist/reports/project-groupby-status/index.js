@@ -155,7 +155,7 @@ function getBreakdown(config, name, issues, drillIn) {
     // Flagging issues for discussion
     //
     groupByData.flagged = {};
-    issues.filter(issue => issue.project_stage !== project_reports_lib_1.ProjectStages.Done);
+    issues = issues.filter(issue => issue.project_stage !== project_reports_lib_1.ProjectStages.Done);
     const statusRegEx = new RegExp(config['status-label-match']);
     groupByData.flagged.red =
         issues.filter(issue => rptLib.getStringFromLabel(issue, statusRegEx).toLowerCase() === 'red') || [];

@@ -121,7 +121,7 @@ function getBreakdown(
   // Flagging issues for discussion
   //
   groupByData.flagged = <Flagged>{}
-  issues.filter(issue => issue.project_stage !== ProjectStages.Done)
+  issues = issues.filter(issue => issue.project_stage !== ProjectStages.Done)
 
   const statusRegEx = new RegExp(config['status-label-match'])
   groupByData.flagged.red =
