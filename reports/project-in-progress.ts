@@ -36,7 +36,7 @@ export function getDefaultConfiguration(): any {
 
 export type ProgressData = {
   cardType: string
-  cards: IssueCardEx[]
+  cards: ProjectIssue[]
 }
 
 export interface IssueCardEx extends ProjectIssue {

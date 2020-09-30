@@ -109,6 +109,8 @@ This is the body \r\n\
  body_key_field: the body key value\r\n\
  ### body key heading \r\n\
  body heading value \r\n\
+ ### Body Date: 2020-09-28\r\n\r\n\
+ more text\r\n\
  \r\n',
     comments: [
       {
@@ -166,6 +168,14 @@ This is the body \r\n\
     expect(v.getUTCMonth()).toBe(8) // 0 based
     expect(v.getUTCDate()).toBe(1)
     expect(v.getUTCFullYear()).toBe(2020)
+  })
+
+  it('gets date field value from issue body', async () => {
+    const d = rptLib.getLastCommentDateField(card, 'Body Date')
+    expect(d).toBeDefined()
+    expect(d.getUTCMonth()).toBe(8)
+    expect(d.getUTCDate()).toBe(28)
+    expect(d.getUTCFullYear()).toBe(2020)
   })
 
   it('gets field value from issue comment body', async () => {

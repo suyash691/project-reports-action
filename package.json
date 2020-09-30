@@ -32,6 +32,7 @@
     "tablemark": "^2.0.0"
   },
   "devDependencies": {
+    "@types/clone": "^2.1.0",
     "@types/jest": "^26.0.5",
     "@types/js-yaml": "^3.12.5",
     "@types/mustache": "^4.0.1",

@@ -38,7 +38,7 @@ describe('project-in-progress', () => {
     expect(processed).toBeDefined()
     expect(processed.cardType).toBe('Epic')
 
-    const cards: IssueCardEx[] = processed.cards
+    const cards: IssueCardEx[] = processed.cards as IssueCardEx[]
     expect(cards.length).toBe(4)
 
     // spot check a card

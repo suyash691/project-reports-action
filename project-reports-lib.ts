@@ -102,10 +102,10 @@ export function readFieldFromBody(key: string, body: string): string {
 
     line = line.trim()
     const parts = line.split(':')
-    if (parts.length === 2 && fuzzyMatch(parts[0], key)) {
+    if (parts.length === 2 && wordsMatch(parts[0], key)) {
       val = parts[1].trim()
       break
-    } else if (line.toLowerCase() === key.toLowerCase()) {
+    } else if (wordsMatch(line, key)) {
       headerMatch = true
     }
   }
@@ -124,6 +124,7 @@ export function getLastCommentField(issue: ProjectIssue, field: string): string 
   }
 
   val = readFieldFromBody(field, issue.body)
+  console.log(`des: ${val}`)
   for (let i = issue.comments.length - 1; i >= 0; i--) {
     const comment = issue.comments[i]
     if (!comment) {
@@ -145,7 +146,7 @@ export function getLastCommentField(issue: ProjectIssue, field: string): string 
 export function getLastCommentDateField(issue: ProjectIssue, field: string): Date {
   let d: Date = null
   const val = getLastCommentField(issue, field)
-
+  console.log(`val: ${val}`)
   if (val) {
     d = new Date(val)
   }
@@ -155,6 +156,20 @@ export function getLastCommentDateField(issue: ProjectIssue, field: string): Dat
 
 export function sumCardProperty(cards: ProjectIssue[], prop: string): number {
   return cards.reduce((a, b) => a + (b[prop] || 0), 0)
+}
+
+export function wordsMatch(content: string, match: string): boolean {
+  let matchWords = match.match(/[a-zA-Z0-9]+/g)
+  let contentWords = content.match(/[a-zA-Z0-9]+/g)
+
+  if (!matchWords || !contentWords) {
+    return false
+  }
+
+  matchWords = matchWords.map(item => item.toLowerCase())
+  contentWords = contentWords.map(item => item.toLowerCase())
+
+  return matchWords.length === contentWords.length && matchWords.every((value, index) => value === contentWords[index])
 }
 
 export function fuzzyMatch(content: string, match: string): boolean {
@@ -376,8 +391,11 @@ export class IssueList {
   }
 
   public getItems(): ProjectIssue[] {
+    console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+    console.log('getItems ...')
     if (this.processed) {
-      return this.processed
+      // return clone(this.processed)
+      this.processed
     }
 
     // call process
@@ -386,6 +404,7 @@ export class IssueList {
     }
 
     this.processed = this.items
+    //return clone(this.processed)
     return this.processed
   }
 

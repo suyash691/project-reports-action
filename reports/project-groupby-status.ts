@@ -158,7 +158,7 @@ function getBreakdown(
   // we only care about in progress being past the target date
   groupByData.flagged.pastTarget = clone(groupByData.stages.inProgress).filter(issue => {
     const d = rptLib.getLastCommentDateField(issue, config['target-date-comment-field'])
-    return d && !isNaN(d.valueOf()) && moment(d).isBefore(now)
+    return d && !isNaN(d.valueOf()) && moment(d).add(1, 'days').isBefore(now)
   })
   drillIn(drillInName(name, 'past-target'), `${name} past the target date`, groupByData.flagged.pastTarget)
 
