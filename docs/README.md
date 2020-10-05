@@ -93,6 +93,13 @@ reports:
       - name: "project-new"
 ```
 
+If your column names are not the stage names listed above, it may still work since other common column names are auto mapped.
+
+`Proposed` => `New`, `Ready for Review`, `Ready for Triage`, `Not Started`   
+`Accepted` => `Ready for Work`, `Approved`, `Up Next`  
+`In-Progress` => `Active`, `In progress`, `InProgress`, `Started`   
+`Done` => `Completed`, `Complete`  
+
 ## Configuration File Details
 
 Detailed configuration settings are [covered here](./configuration.md)
