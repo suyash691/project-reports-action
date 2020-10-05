@@ -531,8 +531,11 @@ exports.ProjectStages = {
 function getProjectStageIssues(issues) {
     const projIssues = {};
     for (const projIssue of issues) {
+        console.log(projIssue.html_url);
         const stage = projIssue['project_stage'];
+        console.log(stage);
         if (!stage) {
+            console.log(`no stage: ${projIssue.html_url}`);
             // the engine will handle and add to an issues list
             continue;
         }
@@ -847,11 +850,15 @@ function process(target, config, data, github) {
         for (const issue of data.getItems()) {
             console.log(`issue : ${issue.title}`);
             console.log(`url   : ${issue.html_url}`);
-            const processLabel = issue.labels.filter(label => label.name.toLowerCase() === config['process-with-label'].toLowerCase());
-            if (processLabel.length == 0) {
-                console.log(`Skipping.  Only processing with label ${config['process-with-label']}`);
-                console.log();
-                continue;
+            const processLabel = config['process-with-label'];
+            console.log(`Processing ${processLabel}...`);
+            if (processLabel !== '*') {
+                const processLabel = issue.labels.filter(label => label.name.toLowerCase() === config['process-with-label'].toLowerCase());
+                if (processLabel.length == 0) {
+                    console.log(`Skipping.  Only processing with label ${config['process-with-label']}`);
+                    console.log();
+                    continue;
+                }
             }
             const status = project_reports_lib_1.getLastCommentField(issue, config['status-field-name']);
             if (!status) {

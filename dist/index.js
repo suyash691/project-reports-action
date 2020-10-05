@@ -3294,8 +3294,11 @@ exports.ProjectStages = {
 function getProjectStageIssues(issues) {
     const projIssues = {};
     for (const projIssue of issues) {
+        console.log(projIssue.html_url);
         const stage = projIssue['project_stage'];
+        console.log(stage);
         if (!stage) {
+            console.log(`no stage: ${projIssue.html_url}`);
             // the engine will handle and add to an issues list
             continue;
         }

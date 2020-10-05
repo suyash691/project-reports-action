@@ -119,9 +119,13 @@ function drillInName(name, column) {
 function getBreakdown(config, name, issues, drillIn) {
     console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
     console.log(`Breakdown for ${name}`);
+    console.log(`issues: ${issues.length}`);
     console.log();
     const groupByData = {};
     const stageData = rptLib.getProjectStageIssues(issues);
+    for (const stage in stageData) {
+        console.log(`${stage}: ${stageData[stage].length}`);
+    }
     //
     // Breakdown by stages
     //
@@ -130,8 +134,10 @@ function getBreakdown(config, name, issues, drillIn) {
     drillIn(drillInName(name, 'proposed'), `${name} proposed`, groupByData.stages.proposed);
     groupByData.stages.accepted = stageData[project_reports_lib_1.ProjectStages.Accepted] || [];
     drillIn(drillInName(name, 'accepted'), `${name} accepted`, groupByData.stages.accepted);
+    console.log(stageData[project_reports_lib_1.ProjectStages.InProgress]);
     groupByData.stages.inProgress = stageData[project_reports_lib_1.ProjectStages.InProgress] || [];
     drillIn(drillInName(name, 'in-progress'), `${name} in progress`, groupByData.stages.inProgress);
+    console.log(`inProgress: ${groupByData.stages.inProgress.length}`);
     groupByData.stages.blocked = stageData[project_reports_lib_1.ProjectStages.Blocked] || [];
     drillIn(drillInName(name, 'blocked'), `${name} blocked`, groupByData.stages.blocked);
     // get the limit from config by fuzzy matching the group label with the setting
@@ -143,7 +149,7 @@ function getBreakdown(config, name, issues, drillIn) {
         }
     }
     groupByData.stages.inProgressLimits = {
-        limit: limit,
+        limit: limit || Number.MAX_VALUE,
         flag: groupByData.stages.inProgress.length > limit
     };
     groupByData.stages.done = stageData[project_reports_lib_1.ProjectStages.Done] || [];
@@ -155,15 +161,15 @@ function getBreakdown(config, name, issues, drillIn) {
     // Flagging issues for discussion
     //
     groupByData.flagged = {};
-    issues = issues.filter(issue => issue.project_stage !== project_reports_lib_1.ProjectStages.Done);
+    const notDone = issues.filter(issue => issue.project_stage !== project_reports_lib_1.ProjectStages.Done);
     const statusRegEx = new RegExp(config['status-label-match']);
     groupByData.flagged.red =
-        issues.filter(issue => rptLib.getStringFromLabel(issue, statusRegEx).toLowerCase() === 'red') || [];
+        notDone.filter(issue => rptLib.getStringFromLabel(issue, statusRegEx).toLowerCase() === 'red') || [];
     drillIn(drillInName(name, 'red'), `${name} with a status red`, groupByData.flagged.red);
     groupByData.flagged.yellow =
-        issues.filter(issue => rptLib.getStringFromLabel(issue, statusRegEx).toLowerCase() === 'yellow') || [];
+        notDone.filter(issue => rptLib.getStringFromLabel(issue, statusRegEx).toLowerCase() === 'yellow') || [];
     drillIn(drillInName(name, 'yellow'), `${name} with a status yellow`, groupByData.flagged.yellow);
-    groupByData.flagged.inProgressDuration = issues.filter(issue => {
+    groupByData.flagged.inProgressDuration = notDone.filter(issue => {
         if (issue.project_stage === project_reports_lib_1.ProjectStages.InProgress) {
             const days = moment().diff(moment(issue.project_in_progress_at), 'days');
             console.log(`In progress, ${days}: ${issue.title}`);
@@ -197,6 +203,7 @@ function process(config, issueList, drillIn) {
     groupData.durationDays = config['flag-in-progress-days'];
     groupData.groups = {};
     const issues = issueList.getItems();
+    console.log(`issues: ${issues.length}`);
     const label = config['report-on-label'];
     if (!label) {
         throw new Error('report-on-label is required');
@@ -788,8 +795,11 @@ exports.ProjectStages = {
 function getProjectStageIssues(issues) {
     const projIssues = {};
     for (const projIssue of issues) {
+        console.log(projIssue.html_url);
         const stage = projIssue['project_stage'];
+        console.log(stage);
         if (!stage) {
+            console.log(`no stage: ${projIssue.html_url}`);
             // the engine will handle and add to an issues list
             continue;
         }

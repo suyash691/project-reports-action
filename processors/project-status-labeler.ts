@@ -83,14 +83,18 @@ export async function process(
     console.log(`issue : ${issue.title}`)
     console.log(`url   : ${issue.html_url}`)
 
-    const processLabel = issue.labels.filter(
-      label => label.name.toLowerCase() === config['process-with-label'].toLowerCase()
-    )
+    const processLabel = config['process-with-label']
+    console.log(`Processing ${processLabel}...`)
+    if (processLabel !== '*') {
+      const processLabel = issue.labels.filter(
+        label => label.name.toLowerCase() === config['process-with-label'].toLowerCase()
+      )
 
-    if (processLabel.length == 0) {
-      console.log(`Skipping.  Only processing with label ${config['process-with-label']}`)
-      console.log()
-      continue
+      if (processLabel.length == 0) {
+        console.log(`Skipping.  Only processing with label ${config['process-with-label']}`)
+        console.log()
+        continue
+      }
     }
 
     const status = getLastCommentField(issue, config['status-field-name'])
