@@ -100,6 +100,8 @@ If your column names are not the stage names listed above, it may still work sin
 `In-Progress` => `Active`, `In progress`, `InProgress`, `Started`   
 `Done` => `Completed`, `Complete`  
 
+If it's not in that list, see the next section for configuration file details.  You can still map them.
+
 ## Configuration File Details
 
 Detailed configuration settings are [covered here](./configuration.md)
