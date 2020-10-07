@@ -16,3 +16,5 @@ $ ./interactive.sh samples/sample.yaml
 
 After you run it, you should see stuff under .reports.
 All the query results will be cached and written to .reports/.data if you want to inspect.
+
+To run any other report locally, you can add debug-<name>.yml files to the samples directory and then run as above.
