@@ -1,15 +1,16 @@
 import clone from 'clone'
 import * as os from 'os'
 import tablemark from 'tablemark'
-import {CrawlingTarget} from '../interfaces'
+import { isNullOrUndefined } from 'util'
+import { CrawlingTarget } from '../interfaces'
 import * as rptLib from '../project-reports-lib'
-import {IssueList, ProjectIssue, ProjectStageIssues, ProjectStages} from '../project-reports-lib'
+import { IssueList, ProjectIssue, ProjectStageIssues, ProjectStages } from '../project-reports-lib'
 import moment = require('moment')
 
 const now = moment()
 
 const reportType = 'project'
-export {reportType}
+export { reportType }
 
 /*
  * Gives visibility into whether the team has untriaged debt, an approval bottleneck and
@@ -20,7 +21,8 @@ export function getDefaultConfiguration(): any {
   return <any>{
     'report-on-label': 'feature',
     'group-by-label-prefix': '> ',
-    'target-date-comment-field': 'target date',
+    'target-date-comment-field': '### Target Date',
+    'risks-comment-field': '### Risks',
     'flag-in-progress-days': 21,
     'wip-limit': 2,
     limits: {},
@@ -30,7 +32,7 @@ export function getDefaultConfiguration(): any {
 
 export interface GroupBy {
   total: GroupByData
-  groups: {[group: string]: GroupByData}
+  groups: { [group: string]: GroupByData }
   durationDays: number
   wipLimit: number
 }
@@ -59,6 +61,7 @@ export interface Flagged {
   noTarget: ProjectIssue[]
   red: ProjectIssue[]
   yellow: ProjectIssue[]
+  atRisk: ProjectIssue[]
 }
 
 function drillInName(name: string, column: string) {
@@ -142,7 +145,11 @@ function getBreakdown(
     return d && !isNaN(d.valueOf()) && moment(d).isBefore(now)
   })
   drillIn(drillInName(name, 'past-target'), `${name} past the target date`, groupByData.flagged.pastTarget)
-
+  groupByData.flagged.atRisk = clone(groupByData.stages.accepted).filter(issue => {
+    const d = rptLib.getLastCommentField(issue, config['risks-comment-field'])
+    return d && !isNullOrUndefined(d) && !(d === '')
+  })
+  drillIn(drillInName(name, 'At-Risk'), `${name} has associated risks`, groupByData.flagged.atRisk)
   return groupByData
 }
 
@@ -271,16 +278,16 @@ export function renderMarkdown(targets: CrawlingTarget[], processedData: any): s
     tablemark(rows, {
       columns: [
         '...',
-        {name: ':new:', align: 'center'},
-        {name: ':white_check_mark:', align: 'center'},
+        { name: ':new:', align: 'center' },
+        { name: ':white_check_mark:', align: 'center' },
         {
           name: `:hourglass_flowing_sand:`,
           align: 'center'
         },
-        {name: ':checkered_flag:', align: 'center'},
+        { name: ':checkered_flag:', align: 'center' },
         '...',
-        {name: ':yellow_heart:', align: 'center'},
-        {name: ':heart:', align: 'center'},
+        { name: ':yellow_heart:', align: 'center' },
+        { name: ':heart:', align: 'center' },
         {
           name: `:calendar: <sub><sup>(>${groupBy.durationDays} days)</sup></sub>`,
           align: 'center'

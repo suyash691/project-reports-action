@@ -5,6 +5,7 @@ _reports
 .reports
 dbg.log
 dist/samples
+**/.DS_Store
 
 samples/debug*.yml
 

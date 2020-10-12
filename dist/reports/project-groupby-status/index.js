@@ -90,6 +90,7 @@ exports.renderHtml = exports.renderMarkdown = exports.process = exports.getDefau
 const clone_1 = __importDefault(__webpack_require__(97));
 const os = __importStar(__webpack_require__(87));
 const tablemark_1 = __importDefault(__webpack_require__(611));
+const util_1 = __webpack_require__(669);
 const rptLib = __importStar(__webpack_require__(189));
 const project_reports_lib_1 = __webpack_require__(189);
 const moment = __webpack_require__(431);
@@ -105,7 +106,8 @@ function getDefaultConfiguration() {
     return {
         'report-on-label': 'feature',
         'group-by-label-prefix': '> ',
-        'target-date-comment-field': 'target date',
+        'target-date-comment-field': '### Target Date',
+        'risks-comment-field': '### Risks',
         'flag-in-progress-days': 21,
         'wip-limit': 2,
         limits: {},
@@ -171,6 +173,12 @@ function getBreakdown(config, name, issues, drillIn) {
         return d && !isNaN(d.valueOf()) && moment(d).isBefore(now);
     });
     drillIn(drillInName(name, 'past-target'), `${name} past the target date`, groupByData.flagged.pastTarget);
+    debugger;
+    groupByData.flagged.atRisk = clone_1.default(groupByData.stages.accepted).filter(issue => {
+        const d = rptLib.getLastCommentField(issue, config['risks-comment-field']);
+        return d && !util_1.isNullOrUndefined(d) && !(d === "");
+    });
+    drillIn(drillInName(name, 'At-Risk'), `${name} has associated risks`, groupByData.flagged.atRisk);
     return groupByData;
 }
 function process(config, issueList, drillIn) {
@@ -7096,6 +7104,13 @@ module.exports = (input, options) => {
   return table
 }
 
+
+/***/ }),
+
+/***/ 669:
+/***/ (function(module) {
+
+module.exports = require("util");
 
 /***/ }),
 
